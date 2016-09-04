@@ -1,0 +1,36 @@
+heat_template_version: 2015-04-30
+
+description: >
+  HOT template for a tiny system
+parameters:
+
+resources:
+
+  vm_1:
+    type: OS::Nova::Server
+    #depends_on: [core_image, test_net_stack]
+    properties:
+      name: VM-1
+      image: {get_resource: core_image}
+      flavor: m1.tiny
+      networks:
+        - subnet: {get_resource: test_net_stack} 
+
+  vm_2:
+    type: OS::Nova::Server
+    #depends_on: [core_image, test_net_stack]
+    properties:
+      name: VM-2
+      image: {get_resource: core_image}
+      flavor: m1.tiny
+      networks:
+        - subnet: {get_resource: test_net_stack} 
+
+  test_net_stack:
+    type: http://artifact_server/HOT/catalog/test_net.yaml
+
+  core_image:
+    type: http://artifact_server/HOT/catalog/core_image.yaml
+
+
+  

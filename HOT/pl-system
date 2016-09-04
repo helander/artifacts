@@ -1,0 +1,254 @@
+heat_template_version: 2015-04-30
+
+description: >
+  HOT template to create an example system with PRE, PIC and PSM.
+
+parameters:
+  external_management_net:
+    type: string
+    description: Name of external management network
+    label: External management network
+    default: admin-net
+ 
+#  external_ossbss_net:
+#    type: string
+#    description: Name of external OSS/BSS network
+#  external_traffic_int_net:
+#    type: string
+#    description: Name of external "int" traffic network
+#  external_traffic_ext_net:
+#    type: string
+#    description: Name of external "ext" traffic network
+
+resources:
+
+  management_net:
+    type: OS::Neutron::Net
+    properties:
+      name: management-net
+
+  management_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: management_net }
+      name: management-subnet
+      cidr: 192.168.112.0/24
+      dns_nameservers: [8.8.8.8]      
+
+  management_router:
+    type: OS::Neutron::Router
+    properties:
+      name: management-router
+      external_gateway_info:
+        network: { get_param: external_management_net }
+
+  management_router-interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: management_router }
+      subnet: { get_resource: management_subnet }
+
+  ossbss_net:
+    type: OS::Neutron::Net
+    properties:
+      name: ossbss-net
+
+  ossbss_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: ossbss_net }
+      name: ossbss-subnet
+      cidr: 192.168.113.0/24
+      dns_nameservers: [8.8.8.8]      
+
+  ossbss_router:
+    type: OS::Neutron::Router
+    properties:
+      name: ossbss-router
+#      external_gateway_info:
+#        network: { get_param: external_ossbss_net }
+
+  ossbss_router-interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: ossbss_router }
+      subnet: { get_resource: ossbss_subnet }
+
+
+  traffic_int_net:
+    type: OS::Neutron::Net
+    properties:
+      name: traffic-int-net
+
+  traffic_int_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: traffic_int_net }
+      name: traffic-int-subnet
+      cidr: 192.168.114.0/24
+#      dns_nameservers: [8.8.8.8]      
+
+
+
+  traffic_int_router:
+    type: OS::Neutron::Router
+    properties:
+      name: traffic-int-router
+#      external_gateway_info:
+#        network: { get_param: external_traffic_int_net }
+
+  traffic_int_router-interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: traffic_int_router }
+      subnet: { get_resource: traffic_int_subnet }
+
+  traffic_ext_net:
+    type: OS::Neutron::Net
+    properties:
+      name: traffic-ext-net
+
+  traffic_ext_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: traffic_ext_net }
+      name: traffic-int-subnet
+      cidr: 192.168.115.0/24
+#      dns_nameservers: [8.8.8.8]      
+
+
+  traffic_ext_router:
+    type: OS::Neutron::Router
+    properties:
+      name: traffic-ext-router
+#      external_gateway_info:
+#        network: { get_param: external_traffic_ext_net }
+
+  traffic_ext_router-interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: traffic_ext_router }
+      subnet: { get_resource: traffic_ext_subnet }
+
+
+#  management_pre_1_port:
+#    type: OS::Neutron::Port
+#    properties:
+#      network: { get_resource: management_net }
+
+  traffic_int_pre_1_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_resource: traffic_int_net }
+      port_security_enabled: False
+#      binding:vnic_type: direct
+
+  traffic_ext_pre_1_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_resource: traffic_ext_net }
+      port_security_enabled: False
+#      binding:vnic_type: direct
+
+  pre_1:
+    type: OS::Nova::Server
+    properties:
+      name: PRE-1
+      image: PLOS
+      flavor: m1.small
+      networks:
+        - port: { get_resource: port_floating_pre_1 }
+        - port: { get_resource: traffic_int_pre_1_port }
+        - port: { get_resource: traffic_ext_pre_1_port }
+
+
+  psm_1:
+    type: OS::Nova::Server
+    properties:
+      name: PSM-1
+      image: STATS
+      flavor: m1.small
+      networks:
+        - port: { get_resource: port_floating_psm_1 }
+        - subnet: { get_resource: ossbss_subnet }
+
+  pic_1:
+    type: OS::Nova::Server
+    properties:
+      name: PIC-1
+      image: STATS
+      flavor: m1.small
+      networks:
+        - port: { get_resource: port_floating_pic_1 }
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/bash
+            echo "Running boot script with $SH1_IP"
+            # ...
+          params:
+           $SH1_IP: {get_attr: [pre_1,networks, management-net,0]}
+
+
+
+  port_floating_pre_1: 
+      type: OS::Neutron::Port
+      properties: 
+        network_id: { get_resource : management_net }
+        fixed_ips:
+          - subnet_id: { get_resource : management_subnet }
+
+  floating_ip_pre_1: 
+      type: OS::Neutron::FloatingIP
+      properties: 
+        floating_network: { get_param: external_management_net }
+
+  floating_ip_assoc_pre_1:
+      type: OS::Neutron::FloatingIPAssociation
+      properties:
+        floatingip_id: { get_resource : floating_ip_pre_1 }
+        port_id: { get_resource : port_floating_pre_1 }
+
+
+  port_floating_pic_1: 
+      type: OS::Neutron::Port
+      properties: 
+        network_id: { get_resource : management_net }
+        fixed_ips:
+          - subnet_id: { get_resource : management_subnet }
+
+  floating_ip_pic_1: 
+      type: OS::Neutron::FloatingIP
+      properties: 
+        floating_network: admin-net
+
+  floating_ip_assoc_pic_1:
+      type: OS::Neutron::FloatingIPAssociation
+      properties:
+        floatingip_id: { get_resource : floating_ip_pic_1 }
+        port_id: { get_resource : port_floating_pic_1 }
+
+
+  port_floating_psm_1: 
+      type: OS::Neutron::Port
+      properties: 
+        network_id: { get_resource : management_net }
+        fixed_ips:
+          - subnet_id: { get_resource : management_subnet }
+
+  floating_ip_psm_1: 
+      type: OS::Neutron::FloatingIP
+      properties: 
+        floating_network_id: { get_param: external_management_net }
+
+  floating_ip_assoc_psm_1:
+      type: OS::Neutron::FloatingIPAssociation
+      properties:
+        floatingip_id: { get_resource : floating_ip_psm_1 }
+        port_id: { get_resource : port_floating_psm_1 }
+
+
+outputs:
+  example_output_management_router_info:
+    description: Management router information
+    value: { get_attr: [management_router, show] }

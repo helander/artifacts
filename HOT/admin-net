@@ -1,0 +1,34 @@
+heat_template_version: 2015-04-30
+
+description: >
+  HOT template to create a provider network representing the Procera RnD admin network (172.21.45.0/24).
+resources:
+#  pre_flavor:
+#    type: OS::Nova::Flavor
+#    properties:
+#      flavor_id: auto
+#      name: PRE
+#      vcpus: 8  
+#      ram: 16000
+#      disk: 160
+  admin_net:
+    type: OS::Neutron::ProviderNet
+    properties:
+      network_type: flat
+      name: admin-net
+      physical_network: octonet0
+      router_external: True
+      shared: True
+  admin_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: admin_net }
+      name: admin-subnet
+      cidr: 172.21.45.0/24
+      enable_dhcp: True
+      allocation_pools:
+        - start: 172.21.45.48
+          end: 172.21.45.55
+      gateway_ip: 172.21.45.1
+      dns_nameservers: [172.21.5.53]      
+

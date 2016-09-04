@@ -1,0 +1,68 @@
+heat_template_version: 2015-04-30
+
+description: >
+  HOT template to create two provider VLAN networks using a SRIOV configured NIC.
+resources:
+  sriov_int_net:
+    type: OS::Neutron::ProviderNet
+    properties:
+      network_type: vlan
+      name: sriov-int-net
+      physical_network: physnet_sriov
+      segmentation_id: 200
+      shared: True
+  sriov_int_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: sriov_int_net }
+      name: sriov-int-subnet
+      cidr: 192.168.30.0/24
+  sriov_ext_net:
+    type: OS::Neutron::ProviderNet
+    properties:
+      network_type: vlan
+      name: sriov-ext-net
+      physical_network: physnet_sriov
+      segmentation_id: 201
+      shared: True
+  sriov_ext_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: sriov_ext_net }
+      name: sriov-ext-subnet
+      cidr: 192.168.31.0/24
+
+
+  sriov_int_port_01:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: sriov_int_net }
+      name: sriov-int-port-01
+      port_security_enabled: False
+      binding:vnic_type: direct
+
+  sriov_int_port_02:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: sriov_int_net }
+      name: sriov-int-port-02
+      port_security_enabled: False
+      binding:vnic_type: direct
+
+  sriov_ext_port_01:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: sriov_ext_net }
+      name: sriov-ext-port-01
+      port_security_enabled: False
+      binding:vnic_type: direct
+
+  sriov_ext_port_02:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: sriov_ext_net }
+      name: sriov-ext-port-02
+      port_security_enabled: False
+      binding:vnic_type: direct
+
+

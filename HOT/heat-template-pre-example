@@ -1,0 +1,101 @@
+heat_template_version: 2013-05-23
+
+description: >
+  HOT template to create an example system to demonstrate how a PRE is network connected.
+  Two networks,named "pre-int" and "pre-ext" are created. A PRE virtual machine is created and
+  connected to both networks. The PRE virtual machine is also connected to an existing management
+  network. The network ports on "pre-int" and "pre-ext" networks are configured with 
+  "--port-security-enabled=False" in order to allow for arbitrary packets to flow from the PRE
+  virtual machine out into the networks.
+  Two additonal virtual machines, one connected to "pre-int" and the other connected to "pre-ext",
+  are created. These machines are also connected to the management network. The machines are used
+  to represent the traffic sources/sinks for the PRE. These machines are called the "environment"-machines.
+parameters:
+  pre_image:
+    type: string
+    description: Name of image to use for PRE machines
+  pre_flavor:
+    type: string
+    description: Flavor to use for PRE machines
+  environment_image:
+    type: string
+    description: Name of image to use for environment machines
+  environment_flavor:
+    type: string
+    description: Flavor to use for environment machines
+  management_net:
+    type: string
+    description: Name of management network
+  int_net:
+    type: string
+    description: Name of pre int network
+  ext_net:
+    type: string
+    description: Name of pre int network
+resources:
+#  pre_int_net:
+#    type: OS::Neutron::Net
+#    properties:
+#      name: "pre-int"
+#  pre_int_subnet:
+#    type: OS::Neutron::Subnet
+#    properties:
+#      network_id: { get_resource: pre_int_net }
+#      cidr: 192.168.111.0/24
+#      enable_dhcp: True
+#  pre_ext_net:
+#    type: OS::Neutron::Net
+#    properties:
+#      name: "pre-ext"
+#  pre_ext_subnet:
+#    type: OS::Neutron::Subnet
+#    properties:
+#      network_id: { get_resource: pre_ext_net }
+#      cidr: 192.168.222.0/24
+#      enable_dhcp: True
+  pre_1:
+    type: OS::Nova::Server
+    properties:
+      name: PRE-1
+      image: { get_param: pre_image }
+      flavor: { get_param: pre_flavor }
+      networks:
+        - port: { get_resource: management_pre_1_port }
+        - port: { get_resource: pre_int_pre_1_port }
+        - port: { get_resource: pre_ext_pre_1_port }
+  management_pre_1_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: management_net }
+  pre_int_pre_1_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: int_net }
+      port_security_enabled: False
+  pre_ext_pre_1_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: ext_net }
+      port_security_enabled: False
+  environment_int:
+    type: OS::Nova::Server
+    properties:
+      name: ENV-INT
+      image: { get_param: environment_image }
+      flavor: { get_param: environment_flavor }
+      networks:
+        - network: { get_param: management_net }
+        - network: { get_param: int_net }
+  environment_ext:
+    type: OS::Nova::Server
+    properties:
+      name: ENV-EXT
+      image: { get_param: environment_image }
+      flavor: { get_param: environment_flavor }
+      networks:
+        - network: { get_param: management_net }
+        - network: { get_param: ext_net }
+
+
+
+

@@ -1,0 +1,122 @@
+heat_template_version: 2015-04-30
+
+description: >
+  HOT template to create some flavors that can be used in conjunction with host aggregates
+parameters:
+  external_net:
+    type: string
+    description: Name of external network
+    label: External network
+    default: admin-net
+
+resources:
+  flavor_alfa:
+    type: OS::Nova::Flavor
+    properties:
+      vcpus: 1  
+      ram: 100
+      disk: 1
+      extra_specs:
+        capabilities:free_ram_mb : ">= 4096"
+        capabilities:free_disk_mb : ">= 10240"
+        aggregate_instance_extra_specs:custom_key1: "s== yet_another_value"
+        aggregate_instance_extra_specs:custom_key2: "<= 2000"
+
+  flavor_beta:
+    type: OS::Nova::Flavor
+    properties:
+      vcpus: 1  
+      ram: 100
+      disk: 1
+      extra_specs:
+        aggregate_instance_extra_specs:custom_key1: "s== some_value"
+
+  affinity_group:
+    type: OS::Nova::ServerGroup
+    properties:
+      name: AFFINITY
+      policies:
+        - affinity
+
+  anti_affinity_group:
+    type: OS::Nova::ServerGroup
+    properties:
+      name: ANTI-AFFINITY
+      policies:
+        - anti-affinity
+
+
+  same_host_1:
+    type: OS::Nova::Server
+    properties:
+      name: SAME-HOST-1
+      image: core
+      flavor: { get_resource: flavor_alfa }
+      networks:
+        - subnet: {get_resource: test_subnet} 
+      scheduler_hints: 
+        group: { get_resource: affinity_group }
+
+  same_host_2:
+    type: OS::Nova::Server
+    properties:
+      name: SAME-HOST-2
+      image: core
+      flavor: { get_resource: flavor_alfa }
+      networks:
+        - subnet: {get_resource: test_subnet} 
+      scheduler_hints: 
+        group: { get_resource: affinity_group }
+
+
+  other_host_1:
+    type: OS::Nova::Server
+    properties:
+      name: OTHER-HOST-1
+      image: core
+      flavor: { get_resource: flavor_alfa }
+      networks:
+        - subnet: {get_resource: test_subnet} 
+      scheduler_hints: 
+        group: { get_resource: anti_affinity_group }
+
+  other_host_2:
+    type: OS::Nova::Server
+    properties:
+      name: OTHER-HOST-2
+      image: core
+      flavor: { get_resource: flavor_alfa }
+      networks:
+        - subnet: {get_resource: test_subnet} 
+      scheduler_hints: 
+        group: { get_resource: anti_affinity_group }
+
+
+
+  test_net:
+    type: OS::Neutron::Net
+    properties:
+      name: test-net
+  test_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: test_net }
+      name: test-subnet
+      cidr: 192.168.222.0/24
+      dns_nameservers: [8.8.8.8] 
+
+
+  test_router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: external_net }
+
+  test_router-interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: test_router }
+      subnet: { get_resource: test_subnet }
+
+
+

@@ -1,0 +1,27 @@
+heat_template_version: 2015-04-30
+
+description: >
+  HOT template to create a provider network representing a laptop docker host network (203.0.113.0/24).
+resources:
+  admin_net:
+    type: OS::Neutron::ProviderNet
+    properties:
+      network_type: flat
+      name: admin-net
+      physical_network: lognet_phys1
+      router_external: True
+      shared: True
+  admin_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: admin_net }
+      name: admin-subnet
+#      cidr: 203.0.113.0/24
+      cidr: 192.168.99.0/24
+      enable_dhcp: True
+      allocation_pools:
+        - start: 192.168.99.50
+          end: 192.168.99.79
+      gateway_ip: 192.168.99.1
+      dns_nameservers: [8.8.8.8]      
+

@@ -1,0 +1,18 @@
+heat_template_version: 2015-04-30
+
+description: >
+  Definition of a STATS image
+resources:
+
+  image:
+    type: OS::Glance::Image
+    properties:
+      name: STATS
+      is_public: True
+      container_format: bare  
+      disk_format: qcow2
+      location: http://artifact_server/image/current-stats
+
+outputs:
+  OS::stack_id:
+    value: {get_resource: image}  

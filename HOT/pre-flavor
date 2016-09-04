@@ -1,0 +1,11 @@
+heat_template_version: 2015-04-30
+
+description: >
+  HOT template to create a flavor for PRE.
+resources:
+  pre_flavor:
+    type: OS::Nova::Flavor
+    properties:
+      vcpus: 8  
+      ram: 16000
+      disk: 20

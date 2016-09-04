@@ -1,0 +1,42 @@
+heat_template_version: 2015-04-30
+
+description: >
+  HOT template to setup a set of host aggregates.
+resources:
+  all_nodes:
+    type: OS::Nova::HostAggregate
+    properties:
+      availability_zone: foobarAZ
+      hosts:
+      - compute-node-01
+      - compute-node-02
+      - compute-node-03
+
+      metadata:
+        custom_key1: some_value
+        custom_key2: "1000"
+      name: ALL-NODES  
+
+  single_node:
+    type: OS::Nova::HostAggregate
+    properties:
+      availability_zone: foobarAZ
+      hosts:
+        - compute-node-02
+      metadata:
+        custom_key1: another_value
+        custom_key2: "3000"
+      name: SINGLE-NODE  
+
+  two_nodes:
+    type: OS::Nova::HostAggregate
+    properties:
+      availability_zone: foobarAZ
+      hosts:
+        - compute-node-01
+        - compute-node-03
+      metadata:
+        custom_key1: yet_another_value
+        custom_key2: "25"
+      name: TWO-NODES  
+

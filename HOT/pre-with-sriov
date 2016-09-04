@@ -1,0 +1,55 @@
+heat_template_version: 2013-05-23
+
+description: >
+  HOT template to create an example system to demonstrate how a PRE is network connected using SRIOV.
+parameters:
+resources:
+  pre_flavor:
+    type: OS::Nova::Flavor
+    properties:
+      vcpus: 8  
+      ram: 16000
+      disk: 160
+  pre_1:
+    type: OS::Nova::Server
+    properties:
+      name: PRE-1
+      image: PLOS
+      flavor: { get_resource: pre_flavor }
+      networks:
+        - port: { get_resource: management_pre_1_port }
+        - port: sriov-int-port-01
+        - port: sriov-ext-port-01
+  management_pre_1_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: admin-net
+  management_env_1_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: admin-net
+  management_env_2_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: admin-net
+  environment_int:
+    type: OS::Nova::Server
+    properties:
+      name: ENV-INT
+      image: archlinux
+      flavor: m1.small
+      networks:
+        - port: { get_resource: management_env_1_port }
+        - port: sriov-int-port-02
+  environment_ext:
+    type: OS::Nova::Server
+    properties:
+      name: ENV-EXT
+      image: archlinux
+      flavor: m1.small
+      networks:
+        - port: { get_resource: management_env_2_port }
+        - port: sriov-ext-port-02
+
+
+

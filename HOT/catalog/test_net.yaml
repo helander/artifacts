@@ -1,0 +1,33 @@
+heat_template_version: 2015-04-30
+
+resources:
+
+  test_net:
+    type: OS::Neutron::Net
+    properties:
+      name: test-net
+  test_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: test_net }
+      name: test-subnet
+      cidr: 192.168.222.0/24
+      dns_nameservers: [8.8.8.8] 
+
+  test_router:
+    type: OS::Neutron::Router
+    properties:
+      name: test-router
+#      external_gateway_info:
+#        network: { get_param: external_net }
+
+  test_router-interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: test_router }
+      subnet: { get_resource: test_subnet }
+
+outputs:
+  OS::stack_id:
+    value: {get_resource: test_subnet}  
+
